@@ -1,4 +1,9 @@
-#include <bits/stdc++.h>
+#pragma once
+#include<vector>
+#include<iostream>
+#include<list>
+#include<algorithm>
+#include<stdexcept>
 
 template<class KeyType, class ValueType, class Hash = std::hash<KeyType> >
 class HashMap
@@ -6,42 +11,29 @@ class HashMap
 private:
     std::list<std::pair<const KeyType, ValueType> > elems;
     std::vector<std::list<std::pair<const KeyType, typename std::list<std::pair<const KeyType, ValueType> >::iterator> > > place;
-    int maxsize = 100000;
-    int sz = 0;
+    int capacity = 100000;
+    size_t sz = 0;
     Hash hasht;
 public:
     using iterator = typename std::list<std::pair<const KeyType, ValueType> >::iterator;
     using const_iterator = typename std::list<std::pair<const KeyType, ValueType> >::const_iterator;
     HashMap(Hash hasher = Hash()) : hasht(hasher)
     {
-        place.resize(maxsize);
+        place.resize(capacity);
     }
     template<class InputIter>
-    HashMap(InputIter start, InputIter finish, Hash hasher = Hash()) : hasht(hasher)
+    HashMap(InputIter start, InputIter finish, Hash hasher = Hash(), cap=100000) : hasht(hasher)
     {
-        place.resize(maxsize);
+        capacity = cap;
+        place.resize(capacity);
         for (InputIter it = start; it != finish; it++)
         {
             this->insert(*it);
         }
     }
-    HashMap(std::initializer_list<std::pair<const KeyType, ValueType> > input, Hash hasher = Hash())  : hasht(hasher)
+    HashMap(std::initializer_list<std::pair<const KeyType, ValueType> > input, Hash hasher = Hash(), cap=100000) : hasht(hasher)
     {
-        place.resize(maxsize);
-        for (auto it = input.begin(); it != input.end(); it++)
-        {
-            this->insert(*it);
-        }
-    }
-    HashMap& operator = (const HashMap other)
-    {
-        this -> clear();
-        hasht = other.hash_function();
-        for (auto it = other.begin(); it != other.end(); it++)
-        {
-            this -> insert(*it);
-        }
-        return *this;
+        *this = Hashmap(input.begin(), input.end(), hasher, cap=cap);
     }
     Hash hash_function() const
     {
@@ -65,7 +57,7 @@ public:
     }
     iterator find(const KeyType key)
     {
-        for (auto i = place[hasht(key) % maxsize].begin(); i != place[hasht(key) % maxsize].end(); i++)
+        for (auto i = place[hasht(key) % capacity].begin(); i != place[hasht(key) % capacity].end(); i++)
         {
             if (i -> first == key)
             {
@@ -76,7 +68,7 @@ public:
     }
     const_iterator find(const KeyType key) const
     {
-        for (auto i = place[hasht(key) % maxsize].begin(); i != place[hasht(key) % maxsize].end(); i++)
+        for (auto i = place[hasht(key) % capacity].begin(); i != place[hasht(key) % capacity].end(); i++)
         {
             if (i -> first == key)
             {
@@ -92,20 +84,34 @@ public:
             return;
         }
         sz++;
-        elems.push_back(elem);
-        auto tmp = elems.end();
-        tmp--;
-        place[hasht(elem.first) % maxsize].push_back(std::make_pair(elem.first, tmp));
+        auto tmp = elems.insert(elems.end(), elem);
+        place[hasht(elem.first) % capacity].push_back(std::make_pair(elem.first, tmp));
+        if (sz * 2 > capacity)
+        {
+            capacity *= 2;
+            rebuild();
+        }
+    }
+    void rebuild()
+    {
+        std::list<std::pair<const KeyType, ValueType> > tmp = elems;
+        this -> clear();
+        this* = Hashmap(elems, cap=capacity);
     }
     void erase(const KeyType key)
     {
-        for (auto i = place[hasht(key) % maxsize].begin(); i != place[hasht(key) % maxsize].end(); i++)
+        for (auto i = place[hasht(key) % capacity].begin(); i != place[hasht(key) % capacity].end(); i++)
         {
             if (i -> first == key)
             {
                 sz--;
                 elems.erase(i -> second);
-                place[hasht(key) % maxsize].erase(i);
+                place[hasht(key) % capacity].erase(i);
+                if (sz * 8 < capacity)
+                {
+                    capacity = sz * 2;
+                    rebuild();
+                }
                 return;
             }
         }
@@ -139,7 +145,7 @@ public:
     {
         for (auto i = elems.begin(); i != elems.end(); i++)
         {
-            place[hasht(i -> first) % maxsize].clear();
+            place[hasht(i -> first) % capacity].clear();
         }
         elems.clear();
         sz = 0;
