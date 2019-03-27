@@ -11,18 +11,18 @@ class HashMap
 private:
     std::list<std::pair<const KeyType, ValueType> > elems;
     std::vector<std::list<std::pair<const KeyType, typename std::list<std::pair<const KeyType, ValueType> >::iterator> > > place;
-    int capacity = 100000;
+    size_t capacity = 100000;
     size_t sz = 0;
     Hash hasht;
 public:
     using iterator = typename std::list<std::pair<const KeyType, ValueType> >::iterator;
     using const_iterator = typename std::list<std::pair<const KeyType, ValueType> >::const_iterator;
-    HashMap(Hash hasher = Hash()) : hasht(hasher)
+    explicit HashMap(Hash hasher = Hash()) : hasht(hasher)
     {
         place.resize(capacity);
     }
     template<class InputIter>
-    HashMap(InputIter start, InputIter finish, Hash hasher = Hash(), cap=100000) : hasht(hasher)
+    HashMap(InputIter start, InputIter finish, Hash hasher = Hash(), size_t cap = 100000) : hasht(hasher)
     {
         capacity = cap;
         place.resize(capacity);
@@ -31,9 +31,9 @@ public:
             this->insert(*it);
         }
     }
-    HashMap(std::initializer_list<std::pair<const KeyType, ValueType> > input, Hash hasher = Hash(), cap=100000) : hasht(hasher)
+    HashMap(std::initializer_list<std::pair<const KeyType, ValueType> > input, Hash hasher = Hash(), size_t cap=100000): HashMap(input.begin(), input.end(), hasher, cap)
     {
-        *this = Hashmap(input.begin(), input.end(), hasher, cap=cap);
+
     }
     Hash hash_function() const
     {
@@ -96,7 +96,7 @@ public:
     {
         std::list<std::pair<const KeyType, ValueType> > tmp = elems;
         this -> clear();
-        this* = Hashmap(elems, cap=capacity);
+        *this = Hashmap(elems, capacity);
     }
     void erase(const KeyType key)
     {
